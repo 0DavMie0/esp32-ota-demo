@@ -1,0 +1,52 @@
+name: Publicar firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Número de versión (por ejemplo 1.1)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Comprobar el número de versión y escribir version.h
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "La versión debe tener el formato 1.2 (dos números separados por un punto)"
+            exit 1
+          fi
+          echo "#define FW_VERSION \"$VERSION\"" > include/version.h
+
+      - name: Caché de PlatformIO (acelera compilaciones siguientes)
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('platformio.ini') }}
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar PlatformIO
+        run: pip install platformio
+
+      - name: Compilar
+        run: pio run -e cyd24
+
+      - name: Publicar la versión
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Versión ${{ inputs.version }}
+          files: .pio/build/cyd24/firmware.bin
