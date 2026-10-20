@@ -103,7 +103,7 @@ void drawMainScreen() {
   currentScreen = SCREEN_MAIN;
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK);
-  tft.drawString("ESP32 OTA demo", SCREEN_W / 2, 20, 2);
+  tft.drawString("Actualizada desde Github", SCREEN_W / 2, 20, 2);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
   tft.drawString("Version " FW_VERSION, SCREEN_W / 2, 65, 4);
   drawButton(btnCheck);
