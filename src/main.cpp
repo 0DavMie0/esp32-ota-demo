@@ -26,7 +26,7 @@
 #include "version.h"
 
 // ---- CAMBIA ESTO por tu usuario de GitHub ----
-const char* GITHUB_USER = "0DavMie0i";
+const char* GITHUB_USER = "0DavMie0";
 const char* GITHUB_REPO = "esp32-ota-demo";
 
 // Nombre de la red que crea la placa para configurar el WiFi desde el móvil
@@ -267,6 +267,8 @@ String fetchLatestVersion(int& httpCode) {
 
   httpCode = http.GET();
   if (httpCode != HTTP_CODE_OK) {
+    Serial.printf("> GitHub ha respondido con el codigo %d al consultar:\n", httpCode);
+    Serial.println("  " + url);
     http.end();
     return "";
   }
@@ -305,7 +307,9 @@ void checkForUpdates() {
 
   if (latest == "") {
     if (httpCode == 404) {
-      showStatus("Aun no hay versiones publicadas", TFT_ORANGE);
+      showStatus("Repositorio o version no encontrados", TFT_ORANGE);
+      Serial.println("  Comprueba que el usuario y el repositorio de la direccion son correctos,");
+      Serial.println("  que el repositorio es publico y que tiene alguna version publicada.");
     } else {
       showStatus("Error al consultar GitHub (" + String(httpCode) + ")", TFT_RED);
     }
