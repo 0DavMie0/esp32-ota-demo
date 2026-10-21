@@ -12,10 +12,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Descargar el código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Comprobar el número de versión y escribir version.h
         env:
@@ -25,16 +25,21 @@ jobs:
             echo "La versión debe tener el formato 1.2 (dos números separados por un punto)"
             exit 1
           fi
-          echo "#define FW_VERSION \"$VERSION\"" > include/version.h
+          cat > include/version.h << EOT
+          // Versión del firmware.
+          // GitHub actualiza este archivo automáticamente cada vez que publicas una versión.
+          // Solo se usa directamente cuando compilas y flasheas por USB desde el PC.
+          #define FW_VERSION "$VERSION"
+          EOT
 
       - name: Caché de PlatformIO (acelera compilaciones siguientes)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.platformio
           key: pio-${{ hashFiles('platformio.ini') }}
 
       - name: Instalar Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -45,8 +50,23 @@ jobs:
         run: pio run -e cyd24
 
       - name: Publicar la versión
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ inputs.version }}
           name: Versión ${{ inputs.version }}
           files: .pio/build/cyd24/firmware.bin
+
+      - name: Guardar el número de versión en el repositorio
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add include/version.h
+          if git diff --cached --quiet; then
+            echo "version.h ya estaba al día"
+          else
+            git commit -m "Versión $VERSION"
+            git pull --rebase
+            git push
+          fi
